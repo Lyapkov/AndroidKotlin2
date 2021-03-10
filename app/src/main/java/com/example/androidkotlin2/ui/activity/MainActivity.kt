@@ -1,52 +1,51 @@
 package com.example.androidkotlin2.ui.activity
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
+import com.github.terrakok.cicerone.androidx.AppNavigator
+import moxy.MvpAppCompatActivity
+import moxy.ktx.moxyPresenter
 import com.example.androidkotlin2.mvp.presenter.MainPresenter
 import com.example.androidkotlin2.mvp.view.MainView
+import com.example.androidkotlin2.ui.App
+import com.example.androidkotlin2.ui.BackClickListener
+import com.example.androidkotlin2.ui.adapter.UsersRVAdapter
+import com.example.androidkotlin2.ui.navigation.AndroidScreens
 import com.example.androidkotlin2.ui.activity.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity(), MainView {
+class MainActivity : MvpAppCompatActivity(), MainView {
+
+    val navigator = AppNavigator(this, R.id.container)
 
     private var vb: ActivityMainBinding? = null
+    private val presenter by moxyPresenter {
+        MainPresenter(App.instance.router, AndroidScreens())
+    }
 
-    val presenter = MainPresenter(this)
+    private var adapter: UsersRVAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         vb = ActivityMainBinding.inflate(layoutInflater)
         setContentView(vb?.root)
-
-        val listener = View.OnClickListener {
-            presenter.counterClick(it.id)
-        }
-
-        vb?.btnCounter1?.setOnClickListener(listener)
-        vb?.btnCounter2?.setOnClickListener(listener)
-        vb?.btnCounter3?.setOnClickListener(listener)
     }
 
-    override fun setButtonText(index: Int, text: String) {
-        when (index) {
-            R.id.btn_counter1 -> vb?.btnCounter1?.text = text
-            R.id.btn_counter2 -> vb?.btnCounter2?.text = text
-            R.id.btn_counter3 -> vb?.btnCounter3?.text = text
-        }
+    override fun onResumeFragments() {
+        super.onResumeFragments()
+        App.instance.navigatorHolder.setNavigator(navigator)
     }
 
-    override fun getCurrentIndexArray(index: Int): Int {
-        return when (index) {
-            R.id.btn_counter1 -> {
-                0
-            }
-            R.id.btn_counter2 -> {
-                1
-            }
-            R.id.btn_counter3 -> {
-                2
-            }
-            else -> -1
-        }
+    override fun onPause() {
+        super.onPause()
+        App.instance.navigatorHolder.removeNavigator()
     }
+
+    override fun onBackPressed() {
+        supportFragmentManager.fragments.forEach {
+            if(it is BackClickListener && it.backPressed()){
+                return
+            }
+        }
+        presenter.backClicked()
+    }
+
 }
