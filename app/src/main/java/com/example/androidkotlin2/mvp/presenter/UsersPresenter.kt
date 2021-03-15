@@ -1,5 +1,6 @@
 package com.example.androidkotlin2.mvp.presenter
 
+import android.util.Log
 import com.github.terrakok.cicerone.Router
 import moxy.MvpPresenter
 import com.example.androidkotlin2.mvp.model.GithubUsersRepo
@@ -8,6 +9,8 @@ import com.example.androidkotlin2.mvp.navigation.IScreens
 import com.example.androidkotlin2.mvp.presenter.list.IUsersListPresenter
 import com.example.androidkotlin2.mvp.view.UsersView
 import com.example.androidkotlin2.mvp.view.list.IUserItemView
+import io.reactivex.rxjava3.core.Observer
+import io.reactivex.rxjava3.disposables.Disposable
 
 class UsersPresenter(val usersRepo: GithubUsersRepo, val router: Router, val screens: IScreens) :
     MvpPresenter<UsersView>() {
@@ -29,7 +32,7 @@ class UsersPresenter(val usersRepo: GithubUsersRepo, val router: Router, val scr
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
         viewState.init()
-        loadData()
+        exec()
 
         usersListPresenter.itemClickListener = { view ->
             val user = usersListPresenter.users[view.pos]
@@ -37,11 +40,17 @@ class UsersPresenter(val usersRepo: GithubUsersRepo, val router: Router, val scr
         }
     }
 
-    fun loadData() {
-        val users = usersRepo.getUsers()
-        usersListPresenter.users.clear()
-        usersListPresenter.users.addAll(users)
-        viewState.updateList()
+    fun exec() {
+        usersRepo.getUsers().subscribe {
+            fun onNext(users: List<GithubUser>?) {
+                usersListPresenter.users.clear()
+                usersListPresenter.users.addAll(users!!)
+                viewState.updateList()
+        }
+
+            fun onError(e: Throwable?) {
+                e?.printStackTrace()
+            } }
     }
 
     fun backClick(): Boolean {

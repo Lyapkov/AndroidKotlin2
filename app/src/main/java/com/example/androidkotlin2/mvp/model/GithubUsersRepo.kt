@@ -1,6 +1,7 @@
 package com.example.androidkotlin2.mvp.model
 
 import com.example.androidkotlin2.mvp.model.entity.GithubUser
+import io.reactivex.rxjava3.core.Observable
 
 class GithubUsersRepo {
     private val users = listOf(
@@ -11,7 +12,7 @@ class GithubUsersRepo {
         GithubUser("login5")
     )
 
-    fun getUsers(): List<GithubUser> {
-        return users
+    fun getUsers(): Observable<List<GithubUser>> {
+        return Observable.just(users)
     }
 }
